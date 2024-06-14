@@ -13,7 +13,6 @@ app.listen(PORT, () =>{
 })
 const WebApps = "https://backend-drc.ru"
 const token = "6532769274:AAH3jhK1isnfjzf_OyOf2WBU_zSwrNAbBrE"
- const chatid =  5;
 const connection = mysql.createConnection({
   host: "31.31.198.112",
   user: "u2642045_jahon",
@@ -28,99 +27,19 @@ connection.connect(function(err){
   }
 })
 const bot = new TelegramApi(token, {polling: true})
-
-bot.on('message', async msg =>{
+  bot.on('message', async msg =>{
   const text = msg.text;
   const uggs = msg.chat.username;
   const chatids = msg.chat.id;
-  let Users = Boolean
-  /*const zapros = '`users` SET `chatids`='+chatids
-  const zapros2 = ' WHERE `users`.`usnames` ='+uggs
-  const itog = zapros+zapros2
-  const fff = ("UPDATE"+itog)
-  connection.query(fff)
-  console.log(fff)*/
-
-  /*function UpdateQuery() {
-    connection.query("INSERT INTO `users`(`chatids`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin` VALUES (?,?,1,0,0,10,100)",chatids ,uggs)
-    console.log(zapros)
-  }
-  UpdateQuery()*/
+  let UserActive = null
   if(text === '/start'){
-    connection.execute("SELECT * FROM `users` WHERE `users`.`chatids` = "+chatids, (err, results) =>{
-      if(err){
-        console.log(err)
-        return;
-      }
-      const fsf = results[0].chatids
-      if(results.length <= 0){
-        console.log(err)
-        Users = false
-      }
-      else{
-        Users = true
-        console.log(Users)
-      }
-      console.log(fsf)
-    })
-  if(Users){
-    app.get('/back', (req, res) => {
-      connection.execute("SELECT `Dragons` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
-        if (err) {
-          console.log(err)
-          return;
-        }
-        res.json({
-          dragons: results[0].Dragons
-        });
-      });
-    });
-    app.get('/back5',(req, res) =>{
-      connection.execute("SELECT `DRGcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
-          if (err) {
-            console.log(err)
-            return;
-          }
-            res.json({
-            drg: results[0].DRGcoin
-          });
-        });
-    })
-    app.get('/back6',(req, res) =>{
-      connection.execute("SELECT `DRCcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
-          if (err) {
-            console.log(err)
-            return;
-          }
-            res.json({
-            drc: results[0].DRCcoin
-          })
-          //console.log()
-        });
-    })
-    app.post('/chatback', (req, res) => {
-    let data = [req.body.Hunters]
-    const zapros = "UPDATE `users` SET `Dragons`=? WHERE `users`.`usnames` =?"
-    const params = [data, uggs]
-    // const fff = itog
-    connection.execute(zapros,params,(err, results) =>{
-      !err ? res.json(results) : res.json(err)
-    })
-    console.log(JSON.stringify(data))
-    })
-  }
-  else{
-    console.log('Юзер не валидный!')
-  }
-    if(!Users) {
-      const ins = "INSERT INTO `users` (`idteleg`,`chatids`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin`) VALUES (NULL,?,?,10,0,0,10,100)"
+      /*const ins = "INSERT INTO `users` (`idteleg`,`chatids`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin`) VALUES (NULL,?,?,10,0,0,10,100)"
       const into = [chatids, uggs]
       await connection.execute(ins, into,(err, results) =>{
-      })
-      console.log('Пользователь создан!')
-    }
+      })*/
+      console.log(msg)
     await bot.sendPhoto(chatids, "Logo.png")
-    await bot.sendMessage(chatids,"Dragon Village is build on HOT mining!",{
+    await bot.sendMessage(chatids,"Dragon Village is build on HOT mining! $",{
       reply_markup: {
         inline_keyboard:[
           [{text:'Go to Dragon village', web_app:{url: WebApps}}]
@@ -128,6 +47,49 @@ bot.on('message', async msg =>{
       }
     })
   }
+  app.get('/back', (req, res) => {
+    connection.execute("SELECT `Dragons` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
+      if (err) {
+        console.log(err)
+          return;
+      }
+      res.json({
+        dragons: results[0].Dragons
+      });
+    });
+  });
+  app.get('/back5',(req, res) =>{
+    connection.execute("SELECT `DRGcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
+        if (err) {
+          console.log(err)
+          return;
+        }
+          res.json({
+          drg: results[0].DRGcoin
+        });
+      });
+  })
+  app.get('/back6',(req, res) =>{
+    connection.execute("SELECT `DRCcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
+        if (err) {
+          console.log(err)
+          return;
+        }
+          res.json({
+          drc: results[0].DRCcoin
+        })
+        //console.log()
+      });
+  })
+  app.post('/chatback', (req, res) => {
+  let data = [req.body.Hunters]
+  const zapros = "UPDATE `users` SET `Dragons`=? WHERE `users`.`usnames` = ?"
+  const params = [data, uggs]
+  connection.execute(zapros,params,(err, results) =>{
+    !err ? res.json(results) : res.json(err)
+  })
+  console.log(JSON.stringify(data))
+  })
   app.get('/back1',(req, res) =>{
     connection.execute("SELECT `totBank` FROM `stage`",(err, results) => {
         if (err) {
@@ -146,7 +108,7 @@ bot.on('message', async msg =>{
             return;
         }
             res.json({
-              seasons: results
+              seasons: results[0].Seasons
       });
    });
   })
@@ -186,4 +148,5 @@ bot.on('message', async msg =>{
     })
   }
 })
+
 app.use(cors())
