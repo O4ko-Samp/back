@@ -4,6 +4,8 @@ const mysql = require('mysql2')
 const PORT = process.env.PORT || 3002
 const {useState, useEffect} = require('react')
 const bodyParser =require('body-parser')
+const { Telegraf } = require('telegraf');
+const session = require('express-session');
 const cors = require('cors')
 
 const app = express()
@@ -26,18 +28,25 @@ connection.connect(function(err){
       console.log(`Покдлючение к БД успешно установлено!`)
   }
 })
+app.use(session({
+  secret: 'telegram-api-game-session-ids-bindex',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 // 1 день
+  }
+}));
 const bot = new TelegramApi(token, {polling: true})
   bot.on('message', async msg =>{
   const text = msg.text;
   const uggs = msg.chat.username;
   const chatids = msg.chat.id;
-  let UserActive = null
   if(text === '/start'){
       /*const ins = "INSERT INTO `users` (`idteleg`,`chatids`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin`) VALUES (NULL,?,?,10,0,0,10,100)"
       const into = [chatids, uggs]
       await connection.execute(ins, into,(err, results) =>{
-      })*/
-      console.log(msg)
+      })
+      console.log('Пользователь создан!')*/
     await bot.sendPhoto(chatids, "Logo.png")
     await bot.sendMessage(chatids,"Dragon Village is build on HOT mining! $",{
       reply_markup: {
@@ -48,16 +57,49 @@ const bot = new TelegramApi(token, {polling: true})
     })
   }
   app.get('/back', (req, res) => {
-    connection.execute("SELECT `Dragons` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
-      if (err) {
-        console.log(err)
+    // Если пользователь уже авторизован, возвращаем данные
+    if (req.session.user) {
+      const userId = req.session.user.id; // Telegram ID пользователя
+      connection.query('SELECT * FROM users WHERE chatids = ?', [userId], (err, rows) => {
+        if (err) {
+          console.error('Ошибка запроса к базе данных:', err);
+          res.status(500).json({ error: 'Ошибка сервера' });
           return;
-      }
-      res.json({
-        dragons: results[0].Dragons
+        }
+  
+        if (rows.length > 0) {
+          res.json(rows[0]);
+        } else {
+          res.status(404).json({ error: 'Пользователь не найден' });
+        }
       });
-    });
+    } else {
+      // Иначе перенаправляем на авторизацию
+      res.redirect('/auth');
+    }
   });
+  app.get('/auth', async (req, res) => {
+    // Получаем Telegram ID пользователя из URL
+    const userId = req.query.id;
+    try {
+      // Получаем информацию о пользователе
+      const user = await bot.getMe();
+      // Сохраняем данные пользователя в сессию
+      req.session.user = user;
+      // Сохраняем пользователя в базе данных
+      connection.query('INSERT INTO users (chatids, usnames) VALUES (?, ?) ON DUPLICATE KEY UPDATE usnames = ?', [userId, user.username, user.username], (err, rows) => {
+        if (err) {
+          console.error('Ошибка записи в базу данных:', err);
+        }
+      });
+      // Перенаправляем на главную страницу
+      res.redirect('/');
+    } catch (error) {
+      console.error('Ошибка авторизации:', error);
+      res.send('Ошибка авторизации!');
+    }
+  });
+  })
   app.get('/back5',(req, res) =>{
     connection.execute("SELECT `DRGcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
         if (err) {
@@ -147,6 +189,4 @@ const bot = new TelegramApi(token, {polling: true})
       return param
     })
   }
-})
-
 app.use(cors())
