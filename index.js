@@ -56,6 +56,7 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
+  })
   app.get('/back', (req, res) => {
     // Если пользователь уже авторизован, возвращаем данные
     if (req.session.user) {
@@ -86,6 +87,7 @@ const bot = new TelegramApi(token, {polling: true})
       const user = await bot.getMe();
       // Сохраняем данные пользователя в сессию
       req.session.user = user;
+      alert('здравствуйте ?', req.session.username)
       // Сохраняем пользователя в базе данных
       connection.query('INSERT INTO users (chatids, usnames) VALUES (?, ?) ON DUPLICATE KEY UPDATE usnames = ?', [userId, user.username, user.username], (err, rows) => {
         if (err) {
@@ -99,7 +101,6 @@ const bot = new TelegramApi(token, {polling: true})
       res.send('Ошибка авторизации!');
     }
   });
-  })
   app.get('/back5',(req, res) =>{
     connection.execute("SELECT `DRGcoin` FROM `users` WHERE `users`.`chatids` ="+chatids, (err, results) => {
         if (err) {
