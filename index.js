@@ -58,76 +58,20 @@ const bot = new TelegramApi(token, {polling: true})
         ]
       }
     })
-    app.post('/auth', (req, res) => {
-    const { telegramId} = req.body;
-    console.log(req.body)
-    // Проверка наличия пользователя в базе данных
-    const query = 'SELECT * FROM users WHERE telegram_id = ?';
-    connection.query(query, [telegramId], (err, results) => {
-      if (err) {
-        console.error('Ошибка при запросе к базе данных:', err);
-        return res.status(500).send('Ошибка сервера');
-      }
-      // Если пользователя нет, создать его
-      if (results.length === 0) {
-        const insertQuery = 'INSERT INTO users (telegram_id, usnames, Dragons, Hunters, Defends, DRCcoin, DRGcoin) VALUES (?, ?, 1, 0, 0, 10, 100);';
-        connection.query(insertQuery, [telegramId, uggs], (err, results) => {
-          if (err) {
-            console.error('Ошибка при добавлении пользователя:', err);
-            return res.status(500).send('Ошибка сервера');
-          }
-          req.session.userId = results.insertId;
-          return res.status(200).json({ userId: results.insertId });
-        });
-      } else {
-        // Сохранить идентификатор пользователя в сессии
-        req.session.userId = results[0].id;
-        return res.status(200).json({ userId: results[0].id });
-      }
-    });
-  });
   }
-  app.post('/auth', (req, res) => {
-    const { telegramId} = req.body;
-    console.log(req.body)
-    // Проверка наличия пользователя в базе данных
-    const query = 'SELECT * FROM users WHERE telegram_id = ?';
-    connection.query(query, [telegramId], (err, results) => {
-      if (err) {
-        console.error('Ошибка при запросе к базе данных:', err);
-        return res.status(500).send('Ошибка сервера');
-      }
-      // Если пользователя нет, создать его
-      if (results.length === 0) {
-        const insertQuery = 'INSERT INTO users (telegram_id, usnames, Dragons, Hunters, Defends, DRCcoin, DRGcoin) VALUES (?, ?, 1, 0, 0, 10, 100);';
-        connection.query(insertQuery, [telegramId, uggs], (err, results) => {
-          if (err) {
-            console.error('Ошибка при добавлении пользователя:', err);
-            return res.status(500).send('Ошибка сервера');
-          }
-          req.session.userId = results.insertId;
-          return res.status(200).json({ userId: results.insertId });
-        });
-      } else {
-        // Сохранить идентификатор пользователя в сессии
-        req.session.userId = results[0].id;
-        return res.status(200).json({ userId: results[0].id });
-      }
-    });
-  });
-  app.get('/dragons', (req, res) => {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).send('Необходимо авторизоваться');
+  app.get('/user/:telegramId', async (req, res) => {
+    const telegramId = req.params.telegramId;
+  console.log(req.params)
+    try {
+      // Получение данных пользователя из базы данных
+      const [rows] = await connection.execute('SELECT * FROM users WHERE telegram_id = ?', [telegramId]);
+      
+      // Отправка данных пользователю
+      res.json(rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal server error');
     }
-    const query = 'SELECT Dragons FROM users WHERE telegram_id = ?';
-    connection.query(query, [userId], (err, results) => {
-      if (err) {
-        console.error('Ошибка при запросе к базе данных:', err);
-        return res.status(500).send('Ошибка сервера');
-      }
-      return res.status(200).json({ dragons: results[0].Dragons });
-    });
   });
   })
   app.post('/chatback', (req, res) => {
@@ -183,4 +127,4 @@ const bot = new TelegramApi(token, {polling: true})
         });
       });
   })
-app.use(cors());
+  app.use(cors());
