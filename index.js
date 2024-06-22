@@ -36,6 +36,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
+    secure: true,
     maxAge: 1000 * 60 * 60 * 24 // 1 день
   }
 }));
@@ -51,7 +52,7 @@ const bot = new TelegramApi(token, {polling: true})
       })
       console.log('Пользователь создан!')*/
     await bot.sendPhoto(chatids, "Logo.png")
-    await bot.sendMessage(chatids,"Dragon Village is build on HOT mining! $",{
+    await bot.sendMessage(chatids,"Dragon Village is build on ....",{
       reply_markup: {
         inline_keyboard:[
           [{text:'Go to Dragon village', web_app:{url: WebApps}}]
@@ -59,21 +60,31 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
-  app.get('/user/:telegramId', async (req, res) => {
-    const telegramId = req.params.telegramId;
-  console.log(req.params)
-    try {
-      // Получение данных пользователя из базы данных
-      const [rows] = await connection.execute('SELECT * FROM users WHERE telegram_id = ?', [telegramId]);
-      
-      // Отправка данных пользователю
-      res.json(rows[0]);
-    } catch (err) {
-      console.error(err);
-      res.status(500).send('Internal server error');
-    }
-  });
-  })
+})
+app.get('/user', async (req, res) => {
+  const telegramId = req.session.telegramId;
+  try {
+    // Получение данных пользователя из базы данных
+    const [rows] = await connection.execute('SELECT * FROM users WHERE telegram_id = ?', [telegramId]);
+
+    // Сохранение данных пользователя в сессию
+    req.session.user = rows[0];
+    // Отправка данных пользователю
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal server error');
+  }
+});
+app.get('/init', (req, res) => {
+  // Получение telegramId из запроса
+  const telegramId = req.query.telegramId;
+
+  // Сохранение telegramId в сессию
+  req.session.telegramId = telegramId;
+
+  res.send('Session initialized!');
+});
   app.post('/chatback', (req, res) => {
   let data = [req.body.Hunters]
   const zapros = "UPDATE `users` SET `Dragons`=? WHERE `users`.`usnames` = ?"
