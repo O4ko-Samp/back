@@ -67,7 +67,7 @@ const bot = new TelegramApi(token, {polling: true})
   }
   app.get(`/back/${telegramId}`, async (req, res) => {
     // Загрузка данных из БД
-    await connection.execute("SELECT * FROM users WHERE telegram_id=?", telegramId, (err, results) => {
+    await connection.execute("SELECT * FROM users WHERE telegram_id=?", [telegramId], (err, results) => {
       if (err) throw err;
       console.log(results[0])
       req.session.userData = results[0]; 
@@ -78,7 +78,7 @@ const bot = new TelegramApi(token, {polling: true})
 })
 app.get('/back2', (req, res) => {
   // Загрузка данных из БД
-  connection.execute("SELECT * FROM `stage`",(err, results) => {
+  connection.execute("SELECT * FROM stage",(err, results) => {
     if (err) throw err;
     let data = results[0]
     res.json({data})
