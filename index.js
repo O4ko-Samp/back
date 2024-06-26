@@ -65,16 +65,16 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
-})
-app.get(`/back/${telegramId}`, (req, res) => {
-  // Загрузка данных из БД
-  connection.query("SELECT * FROM users WHERE telegram_id=?", telegramId, (err, results) => {
-    if (err) throw err;
-    console.log(results[0])
-    req.session.userData = results[0]; 
-    let data = req.session.userData
-    res.json({data})
-  });
+  app.get(`/back/${telegramId}`, async (req, res) => {
+    // Загрузка данных из БД
+    await connection.query("SELECT * FROM users WHERE telegram_id=?", telegramId, (err, results) => {
+      if (err) throw err;
+      console.log(results[0])
+      req.session.userData = results[0]; 
+      let data = req.session.userData
+      res.json({data})
+    });
+  })
 })
 app.get('/back2', (req, res) => {
   // Загрузка данных из БД
