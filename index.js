@@ -7,6 +7,7 @@ const bodyParser =require('body-parser')
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const cors = require('cors')
+const { Status } = require('git')
 
 let chatids = null;
 const app = express()
@@ -17,6 +18,7 @@ app.listen(PORT, () =>{
     console.log(`Сервер запущен на ${PORT} порту`)
 })
 const WebApps = "https://backend-drc.ru/"
+let telegramId = null
 const token = "6532769274:AAH3jhK1isnfjzf_OyOf2WBU_zSwrNAbBrE"
 const connection = mysql.createConnection({
   host: "31.31.198.112",
@@ -34,7 +36,7 @@ connection.connect(function(err){
 app.use(session({
   secret: 'telegram-api-game-session-ids-bindex',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: true,
     maxAge: 1000 * 60 * 60 * 24 // 1 день
@@ -43,8 +45,11 @@ app.use(session({
 const bot = new TelegramApi(token, {polling: true})
   bot.on('message', async msg =>{
   const text = msg.text;
+  process.env.NTBA_FIX_350 = true;
   const uggs = msg.chat.username;
   chatids = msg.chat.id;
+  telegramId = msg.from.id;
+  console.log(msg.from.id)
   if(text === '/start'){
       /*const ins = "INSERT INTO `users` (`idteleg`,`chatids`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin`) VALUES (NULL,?,?,10,0,0,10,100)"
       const into = [chatids, uggs]
@@ -60,82 +65,45 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
+  app.get('/back/:id', (req, res) => {
+    // Загрузка данных из БД
+    req.params.id = telegramId
+    connection.query("SELECT * FROM users WHERE telegram_id=?", telegramId, (err, results) => {
+      if (err) throw err;
+      console.log(results[0])
+      req.session.userData = results[0]; 
+      let data = req.session.userData
+      res.json({data})
+  });
+  app.get('/back2', (req, res) => {
+    // Загрузка данных из БД
+    connection.query("SELECT * FROM `stage`",(err, results) => {
+      if (err) throw err;
+      let data = results[0]
+      res.json({data})
+      console.log(results[0])
+      //res.redirect(WebApps); // Отправка веб-приложения
+    });
+  });
 })
-app.get('/user', async (req, res) => {
-  const telegramId = req.session.telegramId;
-  try {
-    // Получение данных пользователя из базы данных
-    const [rows] = await connection.execute('SELECT * FROM users WHERE telegram_id = ?', [telegramId]);
-
-    // Сохранение данных пользователя в сессию
-    req.session.user = rows[0];
-    // Отправка данных пользователю
-    res.json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal server error');
+})
+bot.on("callback_query", async (query) => {
+  if (query.data === "open_web_app") {
+    await bot.answerCallbackQuery(query.id);
+    await bot.sendWebAppData(
+      query.from.id,
+      "Telegram Web App",
+      `https://${WebApps}/`
+    );
   }
-});
-app.get('/init', (req, res) => {
-  // Получение telegramId из запроса
-  const telegramId = req.query.telegramId;
-
-  // Сохранение telegramId в сессию
-  req.session.telegramId = telegramId;
-
-  res.send('Session initialized!');
 });
   app.post('/chatback', (req, res) => {
   let data = [req.body.Hunters]
-  const zapros = "UPDATE `users` SET `Dragons`=? WHERE `users`.`usnames` = ?"
+  const zapros = "UPDATE `users` SET `Hunters`=? WHERE `users`.`usnames` = ?"
   const params = [data, uggs]
   connection.execute(zapros,params,(err, results) =>{
     !err ? res.json(results) : res.json(err)
   })
   console.log(JSON.stringify(data))
-  })
-  app.get('/back1',(req, res) =>{
-    connection.execute("SELECT `totBank` FROM `stage`",(err, results) => {
-        if (err) {
-          console.log(err)
-          return;
-        }
-          res.json({
-          banks: results[0].totBank
-        });
-      });
-  })
-  app.get('/back2',(req, res) =>{
-    connection.execute("SELECT `Seasons` FROM `stage`", (err, results) => {
-        if (err) {
-            console.log(err)
-            return;
-        }
-            res.json({
-              seasons: results[0].Seasons
-      });
-   });
-  })
-  app.get('/back3',(req, res) =>{
-    connection.execute("SELECT `toStage` FROM `stage`", (err, results) => {
-      if (err) {
-          console.log(err)
-          return;
-        }
-          res.json({
-          stages: results[0].toStage
-      });
-    });
-  })
-  app.get('/back4',(req, res) =>{
-    connection.execute("SELECT `tOnline` FROM `stage`", (err, results) => {
-        if (err) {
-          console.log(err)
-          return;
-        }
-          res.json({
-          online: results[0].tOnline
-        });
-      });
   })
   app.use(cors());
