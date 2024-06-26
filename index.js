@@ -1,4 +1,4 @@
-const express = require('express')
+tconst express = require('express')
 const TelegramApi = require('node-telegram-bot-api')
 const mysql = require('mysql2')
 const PORT = process.env.PORT || 3002
@@ -65,7 +65,7 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
-  app.get(`/back/${telegramId}`, async (req, res) => {
+  app.get(`/back/${telegramId}`, async (req, res, next) => {
     // Загрузка данных из БД
     await connection.execute("SELECT * FROM users WHERE telegram_id=?", [telegramId], (err, results) => {
       if (err) throw err;
@@ -74,6 +74,7 @@ const bot = new TelegramApi(token, {polling: true})
       let data = req.session.userData
       res.json({data})
     });
+      next();
   })
 })
 app.get('/back2', (req, res) => {
