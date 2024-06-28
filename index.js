@@ -66,12 +66,12 @@ const bot = new TelegramApi(token, {polling: true})
   }
   app.get('/back/:userId', async (req, res) => {
     const userId = req.params.userId;
-    await connection.execute("SELECT * FROM users WHERE telegram_id=?", userId, (err, results) => {
+    await connection.execute("SELECT * FROM users WHERE telegram_id=?", [userId], (err, results) => {
       if (err) throw err;
-      console.log(results[0])
       req.session.userData = results[0]; 
       let data = req.session.userData
       res.json({data})
+        console.log(results[0])
     });
   });
 })
@@ -81,7 +81,6 @@ app.get('/back2', async (req, res) => {
     if (err) throw err;
     let data = results[0]
     res.json({data})
-    console.log(results[0])
     //res.redirect(WebApps); // Отправка веб-приложения
   });
 });
