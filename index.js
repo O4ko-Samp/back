@@ -7,7 +7,6 @@ const bodyParser =require('body-parser')
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const cors = require('cors')
-const { Status } = require('git')
 
 let chatids = null;
 const app = express()
@@ -65,21 +64,20 @@ const bot = new TelegramApi(token, {polling: true})
       }
     })
   }
-  app.get(`/back/${telegramId}`, async (req, res, next) => {
-    // Загрузка данных из БД
-    await connection.execute("SELECT * FROM users WHERE telegram_id=?", [telegramId], (err, results) => {
+  app.get('/back/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    await connection.execute("SELECT * FROM users WHERE telegram_id=?", userId, (err, results) => {
       if (err) throw err;
       console.log(results[0])
       req.session.userData = results[0]; 
       let data = req.session.userData
       res.json({data})
     });
-      next();
-  })
+  });
 })
-app.get('/back2', (req, res) => {
+app.get('/back2', async (req, res) => {
   // Загрузка данных из БД
-  connection.execute("SELECT * FROM stage",(err, results) => {
+ await connection.execute("SELECT * FROM stage",(err, results) => {
     if (err) throw err;
     let data = results[0]
     res.json({data})
