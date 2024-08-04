@@ -8,7 +8,6 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const cors = require('cors')
 
-let chatids = null;
 const app = express()
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -20,7 +19,7 @@ const WebApps = "https://backend-drc.ru/"
 let telegramId = null
 const token = "6532769274:AAH3jhK1isnfjzf_OyOf2WBU_zSwrNAbBrE"
 const connection = mysql.createConnection({
-  host: "31.31.198.112",
+  host: "194.58.114.14",
   user: "u2642045_jahon",
   database: "u2642045_dragonapp",
   password: "joha_003"
@@ -46,7 +45,7 @@ const bot = new TelegramApi(token, {polling: true})
   const text = msg.text;
   process.env.NTBA_FIX_350 = true;
   const uggs = msg.chat.username;
-  chatids = msg.chat.id;
+  const chatids = msg.chat.id;
   telegramId = msg.from.id;
   console.log(msg.from.id)
   if(text === '/start'){
@@ -56,7 +55,7 @@ const bot = new TelegramApi(token, {polling: true})
       })
       console.log('Пользователь создан!')*/
     await bot.sendPhoto(chatids, "Logo.png")
-    await bot.sendMessage(chatids,"Dragon Village is build on ....",{
+    await bot.sendMessage(chatids,`Hi ${uggs}, Dragon Village is build on testing...`,{
       reply_markup: {
         inline_keyboard:[
           [{text:'Go to Dragon village', web_app:{url: WebApps}}]
@@ -66,12 +65,24 @@ const bot = new TelegramApi(token, {polling: true})
   }
   app.get('/back/:userId', async (req, res) => {
     const userId = req.params.userId;
-    await connection.execute("SELECT * FROM users WHERE telegram_id=?", [userId], (err, results) => {
+    await connection.execute("SELECT * FROM users WHERE telegram_id=?",[userId], async (err, results) => {
       if (err) throw err;
-      req.session.userData = results[0]; 
-      let data = req.session.userData
-      res.json({data})
-        console.log(results[0])
+      console.log(results[0])
+      if(results[0] > 0){
+        req.session.userData = results[0]; 
+        let data = req.session.userData
+        res.json({data})
+      } else {
+        const ins = "INSERT INTO `users` (`telegram_id`, `usnames`, `Dragons`, `Hunters`, `Defends`, `DRCcoin`, `DRGcoin`) VALUES (?,?,10,0,0,10,100)"
+        const into = [chatids, uggs]
+        await connection.execute(ins, into,(err, results) =>{
+          if(err) throw err;
+          req.session.userData = results[0]; 
+          let data = req.session.userData
+          console.log(results)
+          res.json({data})
+        })
+      }
     });
   });
 })
@@ -81,16 +92,25 @@ app.get('/back2', async (req, res) => {
     if (err) throw err;
     let data = results[0]
     res.json({data})
-    //res.redirect(WebApps); // Отправка веб-приложения
+  });
+});
+app.get('/tops', async (req, res) => {
+  // Загрузка данных из БД
+ await connection.execute("SELECT * FROM `users` ORDER BY `Dragons` DESC LIMIT 10",(err, results) => {
+    if (err) throw err;
+    let data = results
+    res.json({data})
   });
 });
   app.post('/chatback', (req, res) => {
   let data = [req.body.Hunters]
-  const zapros = "UPDATE `users` SET `Hunters`=? WHERE `users`.`usnames` = ?"
-  const params = [data, uggs]
+  let data1 = [req.body.Defenders]
+  let coins = [req.body.DRCcoin]
+  const zapros = "UPDATE `users` SET `Hunters`=? `Defends`=? `DRCcoin`=? WHERE `users`.`usnames` = ?"
+  const params = [data, data1, coins, uggs]
   connection.execute(zapros,params,(err, results) =>{
     !err ? res.json(results) : res.json(err)
   })
-  console.log(JSON.stringify(data))
+  console.log(JSON.stringify(data) + JSON.stringify(data))
   })
   app.use(cors());
