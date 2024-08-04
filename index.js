@@ -19,7 +19,7 @@ const WebApps = "https://backend-drc.ru/"
 let telegramId = null
 const token = "6532769274:AAH3jhK1isnfjzf_OyOf2WBU_zSwrNAbBrE"
 const connection = mysql.createConnection({
-  host: "194.58.114.14",
+  host: "31.31.198.112",
   user: "u2642045_jahon",
   database: "u2642045_dragonapp",
   password: "joha_003"
