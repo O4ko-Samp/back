@@ -111,6 +111,6 @@ app.get('/tops', async (req, res) => {
   connection.execute(zapros,params,(err, results) =>{
     !err ? res.json(results) : res.json(err)
   })
-  console.log(JSON.stringify(data) + JSON.stringify(data))
+  console.log(JSON.strinsgify(data) + JSON.stringify(data))
   })
   app.use(cors());
