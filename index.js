@@ -54,7 +54,7 @@ const bot = new TelegramApi(token, {polling: true})
       await connection.execute(ins, into,(err, results) =>{
       })
       console.log('Пользователь создан!')*/
-    await bot.sendPhoto(chatids, "Logo.png")
+    //await bot.sendPhoto(chatids, "Logo.png")
     await bot.sendMessage(chatids,`Hi ${uggs}, Dragon Village is build on testing...`,{
       reply_markup: {
         inline_keyboard:[
